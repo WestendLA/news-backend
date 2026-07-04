@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
 from models.users import User, UserToken
 from typing import Optional
 
 from schemas.users import UserRequest
-from utils.security import get_hashed_password
+from utils.security import get_hashed_password, verify_password
 import uuid
 
 
@@ -47,3 +48,14 @@ async def create_token(db: AsyncSession, user_id: int):
         db.add(UserToken(user_id=user_id, token=token, expires_at=expires_at))
         await db.commit()
     return token
+
+async def authenticate_user(db: AsyncSession, username: str, password: str):
+    """
+    验证用户登录状态
+    """
+    user = await get_user_data(db, username)
+    if not user:
+        return None
+    if not verify_password(password, user.password):
+        return None
+    return user
