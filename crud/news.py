@@ -113,4 +113,6 @@ async def get_related_news(db: AsyncSession, id: int, category_id: int, limit: i
     result = await db.execute(stmt)
     related_news_list = result.scalars().all()
     return related_news_list
+
+
   
