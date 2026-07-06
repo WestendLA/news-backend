@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.db_conf import get_db
 from crud.users import authenticate_user, create_token, create_user, get_user_data
 from schemas.users import UserAuthResponse, UserInfoResponse, UserRequest
+from utils.auth import get_current_user
 from utils.response import success_response
 
 router = APIRouter(prefix="/api/user",tags=["users"])
@@ -40,3 +41,11 @@ async def login(user_data: UserRequest, db: AsyncSession = Depends(get_db)):
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误")
   token = await create_token(db, user.id)
   return success_response(message="登录成功", data=UserAuthResponse(token=token, user_info=UserInfoResponse.model_validate(user)))
+
+
+@router.get("/info")
+async def get_user_info(
+    current_user = Depends(get_current_user),
+):
+    """获取当前用户信息。"""
+    return success_response(data=UserInfoResponse.model_validate(current_user))

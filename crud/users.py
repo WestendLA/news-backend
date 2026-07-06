@@ -59,3 +59,20 @@ async def authenticate_user(db: AsyncSession, username: str, password: str):
     if not verify_password(password, user.password):
         return None
     return user
+
+async def get_user_by_token(db: AsyncSession, token: str):
+    """
+    根据 token 获取用户
+    """
+    query = select(UserToken).where(
+          UserToken.token == token,
+          UserToken.expires_at > datetime.now()   # 只返回未过期的
+            )
+    user_token = await db.execute(query)
+    user_token = user_token.scalar_one_or_none()
+    if not user_token:
+        return None
+    query = select(User).where(User.id == user_token.user_id)
+    user = await db.execute(query)
+    user = user.scalar_one_or_none()
+    return user
