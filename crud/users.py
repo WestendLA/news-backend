@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
-from fastapi import HTTPException, status
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
 from models.users import User, UserToken
 from typing import Optional
 
-from schemas.users import UserRequest
+from schemas.users import UserRequest, UserUpdateRequest
 from utils.security import get_hashed_password, verify_password
 import uuid
 
@@ -75,4 +75,19 @@ async def get_user_by_token(db: AsyncSession, token: str):
     query = select(User).where(User.id == user_token.user_id)
     user = await db.execute(query)
     user = user.scalar_one_or_none()
+    return user
+
+
+# ↓↓↓ 写 update_user 函数 ↓↓↓
+
+async def update_user(db: AsyncSession, username: str, update_data: UserUpdateRequest):
+    """
+    更新用户信息
+    """
+    update_query = update(User).where(User.username == username).values(**update_data.model_dump(exclude_unset=True, exclude_none=True))
+    result = await db.execute(update_query)
+    if result.rowcount == 0:
+        return None
+    await db.commit()
+    user = await get_user_data(db, username)
     return user

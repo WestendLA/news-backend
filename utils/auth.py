@@ -1,21 +1,25 @@
 """认证依赖：提供 get_current_user，供需要登录的接口使用。"""
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
 from crud.users import get_user_by_token
 
-# HTTPBearer 自动从请求头 Authorization: Bearer <token> 中提取 token
-security_scheme = HTTPBearer()
+# 从 Authorization 头提取原始值，不强制要求 "Bearer " 前缀
+security_scheme = APIKeyHeader(name="Authorization")
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    auth_header: str = Depends(security_scheme),
     db: AsyncSession = Depends(get_db),
 ):
-    """从 Authorization 头提取 token，验证后返回当前用户。"""
-    token = credentials.credentials
+    """兼容 "Bearer <token>" 和 "<token>" 两种格式。"""
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]  # 去掉 "Bearer " 前缀
+    else:
+        token = auth_header      # 直接当 token 用
+
     user = await get_user_by_token(db, token)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效的 token")

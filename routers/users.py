@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.users import authenticate_user, create_token, create_user, get_user_data
-from schemas.users import UserAuthResponse, UserInfoResponse, UserRequest
+from crud.users import authenticate_user, create_token, create_user, get_user_data, update_user
+from schemas.users import UserAuthResponse, UserInfoResponse, UserRequest, UserUpdateRequest
 from utils.auth import get_current_user
 from utils.response import success_response
 
@@ -49,3 +49,42 @@ async def get_user_info(
 ):
     """获取当前用户信息。"""
     return success_response(data=UserInfoResponse.model_validate(current_user))
+
+
+# ↓↓↓ 第四步：写 PUT /update 路由（需认证）↓↓↓
+#
+# @router.put("/update")
+# async def update_user_info(
+#     update_data: UserUpdateRequest,              # 请求体（自动校验）
+#     current_user = Depends(get_current_user),    # 当前登录用户
+#     db: AsyncSession = Depends(get_db),          # session
+# ):
+#     """更新当前用户信息。"""
+#     # 1. 调 update_user(db, current_user.id, update_data.model_dump(exclude_none=True))
+#     #    exclude_none=True 只保留前端传了值的字段
+#     # 2. if not updated_user: raise HTTPException(404, "用户不存在")
+#     # 3. 返回 success_response(message="更新成功", data=UserInfoResponse.model_validate(updated_user))
+#
+# 需要导入：
+# - from crud.users import update_user
+# - from schemas.users import UserUpdateRequest
+#
+# 提示：
+# - update_data.model_dump(exclude_none=True) 把 Pydantic 模型转 dict，排除 None 字段
+# - 路由参数名跟 crud 函数参数名可能不同，用关键字传参 model_dump()
+
+@router.put("/update")
+async def update_user_info(
+    update_data: UserUpdateRequest,              # 请求体（自动校验）
+    current_user = Depends(get_current_user),    # 当前登录用户
+    db: AsyncSession = Depends(get_db),          # session
+):
+    """更新当前用户信息。"""
+    # 1. 调 update_user(db, current_user.id, update_data.model_dump(exclude_none=True))
+    #    exclude_none=True 只保留前端传了值的字段
+    # 2. if not updated_user: raise HTTPException(404, "用户不存在")
+    # 3. 返回 success_response(message="更新成功", data=UserInfoResponse.model_validate(updated_user))
+    updated_user = await update_user(db, current_user.username, update_data)
+    if not updated_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    return success_response(message="更新成功", data=UserInfoResponse.model_validate(updated_user))
