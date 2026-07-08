@@ -45,6 +45,23 @@ class UserUpdateRequest(UserInfoBase):
     bio: Optional[str] = Field(None, description="个人简介")
     phone: Optional[str] = Field(None, description="手机号")
 
+
+# ↓↓↓ 定义 PasswordUpdateRequest ↓↓↓
+#
+# class PasswordUpdateRequest(BaseModel):
+#     """修改密码请求体。"""
+#     old_password: str = Field(..., description="当前密码")
+#     new_password: str = Field(..., description="新密码")
+#
+# 提示：
+# - 两个字段都是必填（Field(..., ...) 表示必填）
+# - 字段名可用 oldPassword / newPassword 对齐前端，自己决定
+
+class PasswordUpdateRequest(BaseModel):
+    """修改密码请求体。"""
+    old_password: str = Field(..., alias="oldPassword", description="当前密码")
+    new_password: str = Field(..., alias="newPassword", description="新密码")
+
 # data 数据类型
 class UserAuthResponse(BaseModel):
     token: str

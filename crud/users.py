@@ -6,7 +6,7 @@ from sqlalchemy.sql import select
 from models.users import User, UserToken
 from typing import Optional
 
-from schemas.users import UserRequest, UserUpdateRequest
+from schemas.users import PasswordUpdateRequest, UserRequest, UserUpdateRequest
 from utils.security import get_hashed_password, verify_password
 import uuid
 
@@ -91,3 +91,16 @@ async def update_user(db: AsyncSession, username: str, update_data: UserUpdateRe
     await db.commit()
     user = await get_user_data(db, username)
     return user
+
+
+# ↓↓↓ 写 update_password 函数 ↓↓↓
+
+
+async def change_password(db: AsyncSession, user: User, old_password: str, new_password: str):
+    """修改用户密码。"""
+    if not verify_password(old_password, user.password):
+        return False
+    hashed = get_hashed_password(new_password)
+    user.password = hashed
+    await db.commit()
+    return True

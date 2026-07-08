@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.users import authenticate_user, create_token, create_user, get_user_data, update_user
-from schemas.users import UserAuthResponse, UserInfoResponse, UserRequest, UserUpdateRequest
+from crud.users import authenticate_user, change_password, create_token, create_user, get_user_data, update_user
+from schemas.users import PasswordUpdateRequest, UserAuthResponse, UserInfoResponse, UserRequest, UserUpdateRequest
 from utils.auth import get_current_user
 from utils.response import success_response
 
@@ -88,3 +88,39 @@ async def update_user_info(
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
     return success_response(message="更新成功", data=UserInfoResponse.model_validate(updated_user))
+
+
+# ↓↓↓ 写 PUT /password 路由（需认证）↓↓↓
+#
+# @router.put("/password")
+# async def update_password(
+#     password_data: PasswordUpdateRequest,          # 请求体（旧密码 + 新密码）
+#     current_user = Depends(get_current_user),      # 当前登录用户
+#     db: AsyncSession = Depends(get_db),            # session
+# ):
+#     """修改当前用户密码。"""
+#     # 1. 调 update_password(db, current_user.id, password_data.old_password, password_data.new_password)
+#     # 2. 拿返回值 (success, message)
+#     # 3. if not success: 根据 message 内容返回对应错误
+#     #    比如 "旧密码错误" → 400，"用户不存在" → 404
+#     # 4. 成功返回 success_response(message="密码修改成功", data=None)
+#
+# 需要导入：
+# - from crud.users import update_password
+# - from schemas.users import PasswordUpdateRequest
+
+@router.put("/password")
+async def update_password(
+    password_data: PasswordUpdateRequest,          # 请求体（旧密码 + 新密码）
+    current_user = Depends(get_current_user),      # 当前登录用户
+    db: AsyncSession = Depends(get_db),            # session
+):
+    """修改当前用户密码。"""
+    # 调 change_password(db, 用户名, 旧密码, 新密码)
+    res_change_pwd = await change_password(
+        db, current_user,
+        password_data.old_password, password_data.new_password
+    )
+    if not res_change_pwd:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="密码修改失败，请检查旧密码是否正确")
+    return success_response(message="密码修改成功")
