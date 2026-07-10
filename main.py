@@ -7,7 +7,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import news, users
+from routers import favorite, news, users
 from utils.exception_handler import register_exception_handlers
 
 app = FastAPI(
@@ -46,6 +46,7 @@ async def say_hello(name: str):
 # 挂载路由
 app.include_router(news.router)
 app.include_router(users.router)
+app.include_router(favorite.router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
