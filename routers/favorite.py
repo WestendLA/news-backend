@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.favorite import add_favorite_crud, check_favorite as check_favorite_crud, get_favorite_list_crud, remove_favorite_crud
+from crud.favorite import add_favorite_crud, check_favorite as check_favorite_crud, clear_favorite_crud, get_favorite_list_crud, remove_favorite_crud
 from schemas.favorite import AddFavoriteRequest, FavoriteCheckResponse
 from utils.auth import get_current_user
 from utils.response import success_response
@@ -150,3 +150,32 @@ async def get_favorite_list(
     # - from crud.favorite import get_favorite_list_crud
     result = await get_favorite_list_crud(db, current_user.id, page, pageSize)
     return success_response(message="获取收藏列表成功", data=result)
+
+
+# ↓↓↓ 写 DELETE /clear 路由（需认证）↓↓↓
+#
+# @router.delete("/clear")
+# async def clear_favorite(
+#     current_user = Depends(get_current_user),
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     """清空当前用户的所有收藏。"""
+#     # 1. 调 crud 的 clear_favorite(db, current_user.id)
+#     # 2. 返回 success_response(message=f"成功删除{count}条收藏记录", data=None)
+#     #
+#     # 需要导入：
+#     # - from crud.favorite import clear_favorite
+
+@router.delete("/clear")
+async def clear_favorite(
+    current_user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """清空当前用户的所有收藏。"""
+    # 1. 调 crud 的 clear_favorite(db, current_user.id)
+    # 2. 返回 success_response(message=f"成功删除{count}条收藏记录", data=None)
+    #
+    # 需要导入：
+    # - from crud.favorite import clear_favorite_crud
+    count = await clear_favorite_crud(db, current_user.id)
+    return success_response(message=f"成功删除{count}条收藏记录", data=None)

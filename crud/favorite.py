@@ -213,3 +213,23 @@ async def get_favorite_list_crud(db: AsyncSession, user_id: int, page: int = 1, 
 
     has_more = (page - 1) * page_size + page_size < total
     return FavoriteListResponse(items=items, total=total, hasMore=has_more)
+
+
+# ↓↓↓ 写 clear_favorite 函数 ↓↓↓
+#
+# async def clear_favorite(db: AsyncSession, user_id: int):
+#     """清空当前用户的全部收藏。
+#
+#     实现：
+#     stmt = delete(Favorite).where(Favorite.user_id == user_id)
+#     result = await db.execute(stmt)
+#     await db.commit()
+#     return result.rowcount  # 返回删除的条数
+#     """
+
+async def clear_favorite_crud(db: AsyncSession, user_id: int):
+    """清空当前用户的全部收藏。"""
+    stmt = delete(Favorite).where(Favorite.user_id == user_id)
+    result = await db.execute(stmt)
+    await db.commit()
+    return result.rowcount  # 返回删除的条数
