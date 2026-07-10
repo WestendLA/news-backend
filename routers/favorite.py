@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.favorite import add_favorite_crud, check_favorite as check_favorite_crud, remove_favorite_crud
+from crud.favorite import add_favorite_crud, check_favorite as check_favorite_crud, get_favorite_list_crud, remove_favorite_crud
 from schemas.favorite import AddFavoriteRequest, FavoriteCheckResponse
 from utils.auth import get_current_user
 from utils.response import success_response
@@ -117,3 +117,36 @@ async def remove_favorite(
     if not success:
         return success_response(message="未收藏")
     return success_response(message="取消收藏成功", data=None)
+
+
+# ↓↓↓ 写 GET /list 路由（需认证）↓↓↓
+#
+# @router.get("/list")
+# async def get_favorite_list(
+#     page: int = Query(1, description="页码", ge=1),
+#     pageSize: int = Query(10, description="每页条数", ge=1, le=100),
+#     current_user = Depends(get_current_user),
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     """获取当前用户的收藏列表。"""
+#     # 1. 调 crud 的 get_favorite_list(db, current_user.id, page, pageSize)
+#     # 2. 返回 success_response(data=result)
+#     #
+#     # 需要导入：
+#     # - from crud.favorite import get_favorite_list
+
+@router.get("/list")
+async def get_favorite_list(
+    page: int = Query(1, description="页码", ge=1),
+    pageSize: int = Query(10, description="每页条数", ge=1, le=100),
+    current_user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取当前用户的收藏列表。"""
+    # 1. 调 crud 的 get_favorite_list(db, current_user.id, page, pageSize)
+    # 2. 返回 success_response(data=result)
+    #
+    # 需要导入：
+    # - from crud.favorite import get_favorite_list_crud
+    result = await get_favorite_list_crud(db, current_user.id, page, pageSize)
+    return success_response(message="获取收藏列表成功", data=result)

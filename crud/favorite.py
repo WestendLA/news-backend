@@ -1,8 +1,9 @@
 """收藏数据访问层（CRUD）。"""
-from sqlalchemy import delete, select
+from sqlalchemy import delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.favorite import Favorite
+from models.news import News
 
 
 # ↓↓↓ 写 check_favorite 函数 ↓↓↓
@@ -122,3 +123,93 @@ async def remove_favorite_crud(db: AsyncSession, user_id: int, news_id: int):
     result = await db.execute(stmt)
     await db.commit()
     return result.rowcount > 0
+
+
+# ↓↓↓ 写 get_favorite_list 函数 ↓↓↓
+#
+# async def get_favorite_list(db: AsyncSession, user_id: int, page: int = 1, page_size: int = 10):
+#     """获取用户收藏列表（分页，含新闻详情）。
+#
+#     参数：
+#       db        - 会话
+#       user_id   - 用户ID
+#       page      - 页码，从 1 开始
+#       page_size - 每页条数，默认 10，最大 100
+#
+#     返回：
+#       {"list": [...], "total": int, "hasMore": bool}
+#
+#     实现步骤：
+#     a) 查总数
+#        count_stmt = select(func.count()).select_from(Favorite).where(Favorite.user_id == user_id)
+#        total = (await db.execute(count_stmt)).scalar()
+#
+#     b) 查当前页 + 连表查新闻信息
+#        需要 import News（from models.news import News）
+#        stmt = (
+#            select(Favorite, News)         # ← 多表查询，返回元组 (Favorite, News)
+#            .join(News, Favorite.news_id == News.id)
+#            .where(Favorite.user_id == user_id)
+#            .order_by(desc(Favorite.created_at))
+#            .offset((page - 1) * page_size)
+#            .limit(page_size)
+#        )
+#        result = await db.execute(stmt)
+#        rows = result.all()  # 每行 = (Favorite, News)
+#
+#     c) 拼数据
+#        list = []
+#        for fav, news in rows:
+#            list.append({
+#                "id": news.id,
+#                "title": news.title,
+#                "description": news.description,
+#                "image": news.image,
+#                "author": news.author,
+#                "publishTime": news.publish_time,
+#                "categoryId": news.category_id,
+#                "views": news.views,
+#                "favoriteTime": fav.created_at,
+#            })
+#
+#     d) 算 hasMore
+#        has_more = offset + page_size < total
+#
+#     需要导入：
+#     - from sqlalchemy import desc, func
+#     - from models.news import News
+
+async def get_favorite_list_crud(db: AsyncSession, user_id: int, page: int = 1, page_size: int = 10):
+    """获取用户收藏列表（分页，含新闻详情）。"""
+    from schemas.favorite import FavoriteItemBase, FavoriteListResponse
+
+    count_stmt = select(func.count()).select_from(Favorite).where(Favorite.user_id == user_id)
+    total = (await db.execute(count_stmt)).scalar()
+    stmt = (
+        select(Favorite, News)
+        .join(News, Favorite.news_id == News.id)
+        .where(Favorite.user_id == user_id)
+        .order_by(desc(Favorite.created_at))
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    items = []
+    for fav, news in rows:
+        items.append(FavoriteItemBase(
+            id=news.id,
+            title=news.title,
+            description=news.description,
+            image=news.image,
+            author=news.author,
+            categoryId=news.category_id,
+            views=news.views,
+            publishTime=news.publish_time,
+            favoriteId=fav.id,
+            favoriteTime=fav.created_at,
+        ))
+
+    has_more = (page - 1) * page_size + page_size < total
+    return FavoriteListResponse(items=items, total=total, hasMore=has_more)

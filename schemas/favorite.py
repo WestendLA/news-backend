@@ -1,5 +1,9 @@
 """收藏数据校验模型（Pydantic）。"""
+import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
+
+from schemas.news import NewsItemBase
 
 
 # ↓↓↓ 定义 FavoriteCheckResponse ↓↓↓
@@ -34,3 +38,24 @@ class AddFavoriteRequest(BaseModel):
     news_id: int = Field(..., alias="newsId", description="新闻ID")
     
     model_config = ConfigDict(from_attributes=True)
+
+class FavoriteItemBase(NewsItemBase):
+    favorite_id: int = Field(alias="favoriteId")
+    favorite_time: datetime.datetime = Field(alias="favoriteTime")
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True
+    )
+
+class FavoriteListResponse(BaseModel):
+    """收藏列表响应。"""
+    items: list[FavoriteItemBase] = Field(default=[], alias="list", description="收藏列表")
+    total: int = Field(description="收藏总数")
+    has_more: bool = Field(description="是否有更多数据", alias="hasMore")
+
+    
+    model_config = ConfigDict(
+        from_attributes=True, 
+        populate_by_name=True
+        )
