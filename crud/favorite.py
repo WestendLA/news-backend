@@ -1,5 +1,5 @@
 """收藏数据访问层（CRUD）。"""
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.favorite import Favorite
@@ -83,3 +83,42 @@ async def add_favorite_crud(db: AsyncSession, user_id: int, news_id: int):
     await db.commit()
     await db.refresh(fav)
     return fav
+
+
+# ↓↓↓ 写 remove_favorite 函数 ↓↓↓
+#
+# async def remove_favorite(db: AsyncSession, user_id: int, news_id: int):
+#     """取消收藏。
+#
+#     参数：
+#       db      - 会话
+#       user_id - 用户ID
+#       news_id - 新闻ID
+#
+#     返回：
+#       True（成功删除）/ False（收藏记录不存在）
+#
+#     实现提示：
+#     - 用 await check_favorite(db, user_id, news_id) 先查是否存在
+#     - 不存在 → return False
+#     - 存在 → select(Favorite).where(...) → scalar_one_or_none()
+#            → await db.delete(fav) → await db.commit() → return True
+#     """
+#
+# 或者直接用 delete() 语句（from sqlalchemy import delete）：
+#     stmt = delete(Favorite).where(Favorite.user_id == user_id, Favorite.news_id == news_id)
+#     result = await db.execute(stmt)
+#     await db.commit()
+#     return result.rowcount > 0
+#
+# 两种方式都可以，选你喜欢的
+
+async def remove_favorite_crud(db: AsyncSession, user_id: int, news_id: int):
+    """取消收藏。"""
+    stmt = delete(Favorite).where(
+        Favorite.user_id == user_id,
+        Favorite.news_id == news_id
+    )
+    result = await db.execute(stmt)
+    await db.commit()
+    return result.rowcount > 0

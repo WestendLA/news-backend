@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.favorite import add_favorite_crud, check_favorite as check_favorite_crud
+from crud.favorite import add_favorite_crud, check_favorite as check_favorite_crud, remove_favorite_crud
 from schemas.favorite import AddFavoriteRequest, FavoriteCheckResponse
 from utils.auth import get_current_user
 from utils.response import success_response
@@ -82,4 +82,38 @@ async def add_favorite(
         "newsId": result.news_id,
         "createTime": result.created_at,
     })
+
+
+# ↓↓↓ 写 DELETE /remove 路由（需认证）↓↓↓
+#
+# @router.delete("/remove")
+# async def remove_favorite(
+#     newsId: int = Query(..., description="新闻ID"),
+#     current_user = Depends(get_current_user),
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     """取消收藏。"""
+#     # 1. 调 crud 的 remove_favorite(db, current_user.id, newsId)
+#     # 2. if not success: 返回 404 或提示"未收藏"
+#     # 3. 返回 success_response(message="取消收藏成功", data=None)
+#     #
+#     # 需要导入：
+#     # - from crud.favorite import remove_favorite
    
+@router.delete("/remove")
+async def remove_favorite(
+    newsId: int = Query(..., description="新闻ID"),
+    current_user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """取消收藏。"""
+    # 1. 调 crud 的 remove_favorite(db, current_user.id, newsId)
+    # 2. if not success: 返回 404 或提示"未收藏"
+    # 3. 返回 success_response(message="取消收藏成功", data=None)
+    #
+    # 需要导入：
+    # - from crud.favorite import remove_favorite
+    success = await remove_favorite_crud(db, current_user.id, newsId)
+    if not success:
+        return success_response(message="未收藏")
+    return success_response(message="取消收藏成功", data=None)
