@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.history import add_history, get_history_list
+from crud.history import add_history, delete_history, get_history_list
 from schemas.history import AddHistoryRequest, HistoryResponse
 from utils.auth import get_current_user
 from utils.response import success_response
@@ -54,3 +54,16 @@ async def get_history_list_view(
     # - from fastapi import Query
     result = await get_history_list(db, current_user.id, page, pageSize)
     return success_response(message="获取成功", data=result)
+
+
+@router.delete("/delete/{history_id}")
+async def remove_history(
+    history_id: int,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """删除单条浏览记录。"""
+    success = await delete_history(db, history_id, current_user.id)
+    if not success:
+        return success_response(message="未收藏")
+    return success_response(message="删除成功")

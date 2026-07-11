@@ -1,7 +1,7 @@
 """浏览历史数据访问层（CRUD）。"""
 from datetime import datetime
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.history import History
@@ -76,3 +76,14 @@ async def get_history_list(db: AsyncSession, user_id: int, page: int, page_size:
     has_more = page_size * page < total
 
     return HistoryListResponse(items=items, total=total, has_more=has_more)
+
+
+async def delete_history(db: AsyncSession, history_id: int, user_id: int):
+    """删除单条浏览记录。"""
+    stmt = delete(History).where(
+        History.id == history_id,
+        History.user_id == user_id
+    )
+    result = await db.execute(stmt)
+    await db.commit()
+    return result.rowcount > 0
