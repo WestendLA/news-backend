@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.history import add_history, delete_history, get_history_list
+from crud.history import add_history, clear_history, delete_history, get_history_list
 from schemas.history import AddHistoryRequest, HistoryResponse
 from utils.auth import get_current_user
 from utils.response import success_response
@@ -67,3 +67,13 @@ async def remove_history(
     if not success:
         return success_response(message="未收藏")
     return success_response(message="删除成功")
+
+
+@router.delete("/clear")
+async def clear_all_history(
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """清空浏览历史。"""
+    count = await clear_history(db, current_user.id)
+    return success_response(message=f"成功删除{count}条浏览记录")
