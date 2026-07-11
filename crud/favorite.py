@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.favorite import Favorite
 from models.news import News
-
+from schemas.favorite import FavoriteItemBase, FavoriteListResponse
 
 # ↓↓↓ 写 check_favorite 函数 ↓↓↓
 #
@@ -181,7 +181,6 @@ async def remove_favorite_crud(db: AsyncSession, user_id: int, news_id: int):
 
 async def get_favorite_list_crud(db: AsyncSession, user_id: int, page: int = 1, page_size: int = 10):
     """获取用户收藏列表（分页，含新闻详情）。"""
-    from schemas.favorite import FavoriteItemBase, FavoriteListResponse
 
     count_stmt = select(func.count()).select_from(Favorite).where(Favorite.user_id == user_id)
     total = (await db.execute(count_stmt)).scalar()

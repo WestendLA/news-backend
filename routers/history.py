@@ -1,9 +1,9 @@
 """浏览历史 API 路由（需认证）。"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.history import add_history
+from crud.history import add_history, get_history_list
 from schemas.history import AddHistoryRequest, HistoryResponse
 from utils.auth import get_current_user
 from utils.response import success_response
@@ -38,3 +38,19 @@ async def add_history_view(
 #     # 需要导入：
 #     # - from crud.history import get_history_list
 #     # - from fastapi import Query
+@router.get("/list")
+async def get_history_list_view(
+    page: int = Query(1, description="页码", ge=1),
+    pageSize: int = Query(10, description="每页条数", ge=1, le=100),
+    current_user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """获取浏览历史列表。"""
+    # 1. 调 crud 的 get_history_list(db, current_user.id, page, pageSize)
+    # 2. 返回 success_response(data=result)
+    #
+    # 需要导入：
+    # - from crud.history import get_history_list
+    # - from fastapi import Query
+    result = await get_history_list(db, current_user.id, page, pageSize)
+    return success_response(message="获取成功", data=result)

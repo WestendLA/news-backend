@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from schemas.news import NewsItemBase
+
 
 class AddHistoryRequest(BaseModel):
     """添加浏览记录请求体。"""
@@ -37,3 +39,17 @@ class HistoryResponse(BaseModel):
 #
 # 提示：
 # - 和收藏列表类似，引用 schemas.news 的 NewsItemBase
+
+class HistoryItemBase(NewsItemBase):
+    """历史记录条目。"""
+    view_time: Optional[datetime] = Field(None, alias="viewTime")
+
+    model_config = {"from_attributes": True, "populate_by_name": True}
+
+class HistoryListResponse(BaseModel):
+    """历史列表响应。"""
+    items: list[HistoryItemBase] = Field(default=[], alias="list")
+    total: int = Field(description="历史记录总数")
+    has_more: bool = Field(alias="hasMore")
+    
+    model_config = {"from_attributes": True, "populate_by_name": True}
