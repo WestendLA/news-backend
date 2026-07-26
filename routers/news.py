@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
-from crud.news import get_categories, get_related_news, increase_views, list_news, news_count, news_detail
+from crud.news import get_categories, get_news_list_cached, get_related_news, increase_views, news_detail
 from fastapi import HTTPException
 
 
@@ -30,11 +30,8 @@ router = APIRouter(prefix="/api/news", tags=["news"])
 
 @router.get("/categories")
 async def list_categories(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    categories = await get_categories(db=db, skip=skip, limit=limit)
-    data = [
-        {"id": c.id, "name": c.name, "sort_order": c.sort_order}
-        for c in categories
-    ]
+    data = await get_categories(db=db, skip=skip, limit=limit)
+    
     return {"code": 200, "msg": "获取新闻分类成功", "data": data}
 
 
@@ -75,18 +72,8 @@ async def get_news_list(
     db: AsyncSession = Depends(get_db),  # 依赖注入拿 session
 ):
     """获取新闻列表。"""
-    news_list = await list_news(db=db, category_id=categoryId, page=page, page_size=pageSize)
-    total = await news_count(db=db, category_id=categoryId)
-    has_more = (page - 1) * pageSize + pageSize < total
-    return {
-  "code": 200,
-  "message": "success",
-  "data": {
-    "list": news_list,
-    "total": total,
-    "hasMore": has_more
-  }
-}
+    result = await get_news_list_cached(db=db, category_id=categoryId, page=page, page_size=pageSize)
+    return {"code": 200, "message": "success", "data": result}
 
 @router.get("/detail")
 async def get_news_detail(

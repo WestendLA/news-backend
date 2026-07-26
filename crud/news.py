@@ -1,13 +1,30 @@
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import desc, select, func, update
 from models.news import Category, News
+from cache import news_cache
 
 
 
 async def get_categories(skip: int = 0, limit: int = 100, db: AsyncSession = None):
+    """获取新闻分类。"""
+    # 先从缓存中获取
+    categories = await news_cache.get_categories()
+    if categories:
+        return categories
+
+    # 如果缓存中没有，从数据库中获取
     stmt = select(Category).offset(skip).limit(limit)
     result = await db.execute(stmt)
-    return result.scalars().all()
+    categories = result.scalars().all()
+
+    # 设置缓存
+    if categories:
+        categories = jsonable_encoder(categories)
+        await news_cache.set_categories(categories)
+
+    # 返回数据
+    return categories
 
 
 # ↓↓↓ 第二步：写 get_news_list 查询函数 ↓↓↓
@@ -78,6 +95,30 @@ async def news_count(db: AsyncSession, category_id: int):
     stmt = select(func.count(News.id)).where(News.category_id == category_id)
     total = (await db.execute(stmt)).scalar_one()
     return total
+
+
+async def get_news_list_cached(db: AsyncSession, category_id: int, page: int, page_size: int):
+    """获取新闻列表（带缓存）。"""
+    # 1. 查缓存
+    cached = await news_cache.get_cache_news_list(category_id, page, page_size)
+    if cached:
+        return cached
+
+    # 2. 查数据库
+    news_list = await list_news(db, category_id, page, page_size)
+    total = await news_count(db, category_id)
+
+    has_more = (page - 1) * page_size + page_size < total
+
+    # 3. 转 dict + 存缓存
+    result = {
+        "list": jsonable_encoder(news_list),
+        "total": total,
+        "hasMore": has_more,
+    }
+    await news_cache.set_cache_news_list(category_id, page, page_size, result)
+
+    return result
 
 async def news_detail(db: AsyncSession, id: int):
     """获取新闻详情。
