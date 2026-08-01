@@ -32,7 +32,7 @@ router = APIRouter(prefix="/api/news", tags=["news"])
 async def list_categories(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     data = await get_categories(db=db, skip=skip, limit=limit)
     
-    return {"code": 200, "msg": "获取新闻分类成功", "data": data}
+    return {"code": 200, "message": "获取新闻分类成功", "data": data}
 
 
 # ↓↓↓ 第三步：写 GET /list 路由 ↓↓↓
