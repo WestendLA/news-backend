@@ -4,9 +4,9 @@ from typing import Any
 
 from redis.asyncio import Redis
 
-from config.cache_config import REDIS_DB, REDIS_HOST, REDIS_PORT
+from config.cache_config import REDIS_DB, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT
 
-redis_client = Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
+redis_client = Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, password=REDIS_PASSWORD, decode_responses=True)
 
 
 async def get_cache(key: str):

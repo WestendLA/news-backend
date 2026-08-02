@@ -59,4 +59,5 @@ class UserToken(Base):
 
 
     def __repr__(self):
-        return f"<UserToken(id={self.id}, user_id={self.user_id}, token='{self.token}')>"
+        # 注意：不打印 token 字段，避免会话凭证泄露到日志/调试输出
+        return f"<UserToken(id={self.id}, user_id={self.user_id}, expires_at='{self.expires_at}')>"
