@@ -344,6 +344,4 @@ curl -X POST http://127.0.0.1:8000/api/favorite/add -H "Authorization: <token>" 
 
 ---
 
-## License
 
-教学练习项目，无特定许可证。
